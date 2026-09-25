@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Wie ben ik? – Afbeeldingen</title>
+<style>
+:root{
+  --bg:#f4f6f8; --card:#fff; --text:#18212b; --muted:#65717d;
+  --accent:#1769e0; --accent2:#0d55bd; --danger:#d92d20;
+  --shadow:0 4px 16px rgba(0,0,0,.10);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
+header{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.96);backdrop-filter:blur(10px);border-bottom:1px solid #dfe4e8;padding:12px 16px}
+.top{max-width:1500px;margin:auto;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+h1{font-size:1.25rem;margin:0}
+.stats{font-weight:800;font-size:1.05rem}
+.progress{height:8px;background:#e3e7eb;border-radius:99px;overflow:hidden;margin-top:9px}
+.progress>div{height:100%;width:0;background:var(--accent);transition:width .2s}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+button{border:0;border-radius:10px;padding:9px 12px;font-weight:700;cursor:pointer;background:#e9edf1;color:#1d2730}
+button:hover{filter:brightness(.97)}
+button.primary{background:var(--accent);color:#fff}
+button.danger{background:#fee4e2;color:#b42318}
+main{max-width:1500px;margin:18px auto;padding:0 14px 30px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}
+.card{background:var(--card);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;position:relative;border:2px solid transparent;transition:.18s}
+.card.checked{opacity:.45;border-color:#aab2bb}
+.card.checked img{filter:grayscale(1)}
+.card .imgwrap{position:relative;background:#eee;aspect-ratio:3508/2480;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.card img{width:100%;height:100%;object-fit:cover;display:block;user-select:none;-webkit-user-drag:none}
+.card.checked .cross{display:flex}
+.cross{display:none;position:absolute;inset:0;align-items:center;justify-content:center;font-size:6rem;font-weight:900;color:var(--danger);text-shadow:0 2px 8px rgba(0,0,0,.3);pointer-events:none}
+.caption{padding:9px 10px 6px;font-size:.88rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.actions{display:flex;gap:7px;padding:0 10px 10px}
+.actions button{flex:1;font-size:.82rem;padding:8px 6px}
+.card.checked .toggle{background:#dfe4e8}
+.hint{color:var(--muted);font-size:.86rem;margin:8px 0 0}
+.empty{padding:30px;text-align:center;color:var(--muted)}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:50;align-items:center;justify-content:center;padding:18px}
+.modal.open{display:flex}
+.modalbox{position:relative;max-width:min(1100px,96vw);max-height:94vh;background:#fff;border-radius:16px;padding:10px;display:flex;flex-direction:column}
+.modalbox img{max-width:100%;max-height:78vh;object-fit:contain;border-radius:10px}
+.modaltitle{text-align:center;font-weight:800;padding:8px 30px 4px}
+.close{position:absolute;right:10px;top:10px;background:#fff;border-radius:50%;width:40px;height:40px;padding:0;font-size:24px;line-height:40px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.codeModal .modalbox{min-width:min(420px,92vw);align-items:center}
+.code{font-size:4rem;letter-spacing:.18em;font-weight:900;padding:20px 10px 28px}
+.codeSub{color:var(--muted);text-align:center;padding-bottom:18px}
+@media(max-width:700px){
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  main{padding:0 8px 20px}
+  .caption{font-size:.78rem}
+  .actions button{font-size:.74rem}
+  h1{font-size:1.05rem}
+}
+@media(min-width:1100px){
+  .grid{grid-template-columns:repeat(5,minmax(0,1fr))}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="top">
+    <div>
+      <h1>🧩 Wie ben ik? – overzicht</h1>
+      <div class="stats" id="stats">0 / 0 afgestreept</div>
+    </div>
+    <div class="controls">
+      <button class="primary" id="undoBtn">↩️ Laatste ongedaan</button>
+      <button id="showAllBtn">👁️ Alles tonen</button>
+      <button class="danger" id="resetBtn">♻️ Alles herstellen</button>
+    </div>
+  </div>
+  <div class="top"><div class="progress" style="width:100%"><div id="bar"></div></div></div>
+</header>
+
+<main>
+  <p class="hint">Klik op <b>Afstrepen</b> om een afbeelding af te vinken. Dubbelklik op een afbeelding voor de 3-cijferige code. Gebruik 🔍 om een afbeelding groot te bekijken.</p>
+  <section class="grid" id="grid"></section>
+</main>
+
+<div class="modal" id="imageModal">
+  <div class="modalbox">
+    <button class="close" id="closeImage">×</button>
+    <img id="largeImage" alt="">
+    <div class="modaltitle" id="largeTitle"></div>
+  </div>
+</div>
+
+<div class="modal codeModal" id="codeModal">
+  <div class="modalbox">
+    <button class="close" id="closeCode">×</button>
+    <div class="modaltitle" id="codeTitle"></div>
+    <div class="code" id="codeValue"></div>
+    <div class="codeSub">3-cijferige code</div>
+  </div>
+</div>
+
+<script>
+const ITEMS = [{"id":1,"title":"Afbeelding 1","filename":"Nieuw project (64).jpg","src":"images/Nieuw project (64).jpg","fixedCode":null},{"id":2,"title":"Afbeelding 2","filename":"Nieuw project (1).jpg","src":"images/Nieuw project (1).jpg","fixedCode":null},{"id":3,"title":"Afbeelding 3","filename":"Nieuw project (10).jpg","src":"images/Nieuw project (10).jpg","fixedCode":null},{"id":4,"title":"Afbeelding 4","filename":"Nieuw project (100).jpg","src":"images/Nieuw project (100).jpg","fixedCode":null},{"id":5,"title":"Afbeelding 5","filename":"Nieuw project (11).jpg","src":"images/Nieuw project (11).jpg","fixedCode":null},{"id":6,"title":"Afbeelding 6","filename":"Nieuw project (12).jpg","src":"images/Nieuw project (12).jpg","fixedCode":null},{"id":7,"title":"Afbeelding 7","filename":"Nieuw project (13).jpg","src":"images/Nieuw project (13).jpg","fixedCode":null},{"id":8,"title":"Afbeelding 8","filename":"Nieuw project (14).jpg","src":"images/Nieuw project (14).jpg","fixedCode":null},{"id":9,"title":"Afbeelding 9","filename":"Nieuw project (15).jpg","src":"images/Nieuw project (15).jpg","fixedCode":null},{"id":10,"title":"Afbeelding 10","filename":"Nieuw project (16).jpg","src":"images/Nieuw project (16).jpg","fixedCode":null},{"id":11,"title":"Afbeelding 11","filename":"Nieuw project (17).jpg","src":"images/Nieuw project (17).jpg","fixedCode":null},{"id":12,"title":"Afbeelding 12","filename":"Nieuw project (18).jpg","src":"images/Nieuw project (18).jpg","fixedCode":null},{"id":13,"title":"Afbeelding 13","filename":"Nieuw project (19).jpg","src":"images/Nieuw project (19).jpg","fixedCode":null},{"id":14,"title":"Afbeelding 14","filename":"Nieuw project (2).jpg","src":"images/Nieuw project (2).jpg","fixedCode":null},{"id":15,"title":"Afbeelding 15","filename":"Nieuw project (20).jpg","src":"images/Nieuw project (20).jpg","fixedCode":null},{"id":16,"title":"Afbeelding 16","filename":"Nieuw project (21).jpg","src":"images/Nieuw project (21).jpg","fixedCode":null},{"id":17,"title":"Afbeelding 17","filename":"Nieuw project (22).jpg","src":"images/Nieuw project (22).jpg","fixedCode":null},{"id":18,"title":"Afbeelding 18","filename":"Nieuw project (23).jpg","src":"images/Nieuw project (23).jpg","fixedCode":null},{"id":19,"title":"Afbeelding 19","filename":"Nieuw project (24).jpg","src":"images/Nieuw project (24).jpg","fixedCode":null},{"id":20,"title":"Afbeelding 20","filename":"Nieuw project (25).jpg","src":"images/Nieuw project (25).jpg","fixedCode":null},{"id":21,"title":"Afbeelding 21","filename":"Nieuw project (26).jpg","src":"images/Nieuw project (26).jpg","fixedCode":null},{"id":22,"title":"Afbeelding 22","filename":"Nieuw project (27).jpg","src":"images/Nieuw project (27).jpg","fixedCode":null},{"id":23,"title":"Afbeelding 23","filename":"Nieuw project (28).jpg","src":"images/Nieuw project (28).jpg","fixedCode":null},{"id":24,"title":"Afbeelding 24","filename":"Nieuw project (29).jpg","src":"images/Nieuw project (29).jpg","fixedCode":null},{"id":25,"title":"Afbeelding 25","filename":"Nieuw project (3).jpg","src":"images/Nieuw project (3).jpg","fixedCode":null},{"id":26,"title":"Afbeelding 26","filename":"Nieuw project (30).jpg","src":"images/Nieuw project (30).jpg","fixedCode":null},{"id":27,"title":"Afbeelding 27","filename":"Nieuw project (31).jpg","src":"images/Nieuw project (31).jpg","fixedCode":null},{"id":28,"title":"Afbeelding 28","filename":"Nieuw project (32).jpg","src":"images/Nieuw project (32).jpg","fixedCode":null},{"id":29,"title":"Afbeelding 29","filename":"Nieuw project (33).jpg","src":"images/Nieuw project (33).jpg","fixedCode":null},{"id":30,"title":"Afbeelding 30","filename":"Nieuw project (34).jpg","src":"images/Nieuw project (34).jpg","fixedCode":null},{"id":31,"title":"Afbeelding 31","filename":"Nieuw project (35).jpg","src":"images/Nieuw project (35).jpg","fixedCode":null},{"id":32,"title":"Afbeelding 32","filename":"Nieuw project (36).jpg","src":"images/Nieuw project (36).jpg","fixedCode":null},{"id":33,"title":"Afbeelding 33","filename":"Nieuw project (37).jpg","src":"images/Nieuw project (37).jpg","fixedCode":null},{"id":34,"title":"Afbeelding 34","filename":"Nieuw project (38).jpg","src":"images/Nieuw project (38).jpg","fixedCode":null},{"id":35,"title":"Afbeelding 35","filename":"Nieuw project (39).jpg","src":"images/Nieuw project (39).jpg","fixedCode":null},{"id":36,"title":"Afbeelding 36","filename":"Nieuw project (4).jpg","src":"images/Nieuw project (4).jpg","fixedCode":null},{"id":37,"title":"Afbeelding 37","filename":"Nieuw project (40).jpg","src":"images/Nieuw project (40).jpg","fixedCode":null},{"id":38,"title":"Afbeelding 38","filename":"Nieuw project (41).jpg","src":"images/Nieuw project (41).jpg","fixedCode":null},{"id":39,"title":"Afbeelding 39","filename":"Nieuw project (42).jpg","src":"images/Nieuw project (42).jpg","fixedCode":null},{"id":40,"title":"Afbeelding 40","filename":"Nieuw project (43).jpg","src":"images/Nieuw project (43).jpg","fixedCode":null},{"id":41,"title":"Afbeelding 41","filename":"Nieuw project (44).jpg","src":"images/Nieuw project (44).jpg","fixedCode":null},{"id":42,"title":"Afbeelding 42","filename":"Nieuw project (45).jpg","src":"images/Nieuw project (45).jpg","fixedCode":null},{"id":43,"title":"Afbeelding 43","filename":"Nieuw project (46).jpg","src":"images/Nieuw project (46).jpg","fixedCode":null},{"id":44,"title":"Afbeelding 44","filename":"Nieuw project (47).jpg","src":"images/Nieuw project (47).jpg","fixedCode":null},{"id":45,"title":"Afbeelding 45","filename":"Nieuw project (48).jpg","src":"images/Nieuw project (48).jpg","fixedCode":null},{"id":46,"title":"Afbeelding 46","filename":"Nieuw project (49).jpg","src":"images/Nieuw project (49).jpg","fixedCode":null},{"id":47,"title":"Afbeelding 47","filename":"Nieuw project (5).jpg","src":"images/Nieuw project (5).jpg","fixedCode":null},{"id":48,"title":"Afbeelding 48","filename":"Nieuw project (50).jpg","src":"images/Nieuw project (50).jpg","fixedCode":null},{"id":49,"title":"Afbeelding 49","filename":"Nieuw project (51).jpg","src":"images/Nieuw project (51).jpg","fixedCode":null},{"id":50,"title":"Afbeelding 50","filename":"Nieuw project (52).jpg","src":"images/Nieuw project (52).jpg","fixedCode":null},{"id":51,"title":"Afbeelding 51","filename":"Nieuw project (53).jpg","src":"images/Nieuw project (53).jpg","fixedCode":null},{"id":52,"title":"Afbeelding 52","filename":"Nieuw project (54).jpg","src":"images/Nieuw project (54).jpg","fixedCode":null},{"id":53,"title":"Afbeelding 53","filename":"Nieuw project (55).jpg","src":"images/Nieuw project (55).jpg","fixedCode":null},{"id":54,"title":"Afbeelding 54","filename":"Nieuw project (56).jpg","src":"images/Nieuw project (56).jpg","fixedCode":null},{"id":55,"title":"Afbeelding 55","filename":"Nieuw project (57).jpg","src":"images/Nieuw project (57).jpg","fixedCode":null},{"id":56,"title":"Afbeelding 56","filename":"Nieuw project (58).jpg","src":"images/Nieuw project (58).jpg","fixedCode":null},{"id":57,"title":"Afbeelding 57","filename":"Nieuw project (59).jpg","src":"images/Nieuw project (59).jpg","fixedCode":null},{"id":58,"title":"Afbeelding 58","filename":"Nieuw project (6).jpg","src":"images/Nieuw project (6).jpg","fixedCode":null},{"id":59,"title":"Afbeelding 59","filename":"Nieuw project (60).jpg","src":"images/Nieuw project (60).jpg","fixedCode":null},{"id":60,"title":"Afbeelding 60","filename":"Nieuw project (61).jpg","src":"images/Nieuw project (61).jpg","fixedCode":null},{"id":61,"title":"Afbeelding 61","filename":"Nieuw project (62).jpg","src":"images/Nieuw project (62).jpg","fixedCode":null},{"id":62,"title":"Afbeelding 62","filename":"Nieuw project (63).jpg","src":"images/Nieuw project (63).jpg","fixedCode":null},
+
+{"id":63,"title":"Afbeelding 63","filename":"Afbeelding 1.jpg","src":"images/Afbeelding 1.jpg","fixedCode":"515"}
+
+,{"id":64,"title":"Afbeelding 64","filename":"Nieuw project (65).jpg","src":"images/Nieuw project (65).jpg","fixedCode":null},{"id":65,"title":"Afbeelding 65","filename":"Nieuw project (66).jpg","src":"images/Nieuw project (66).jpg","fixedCode":null},{"id":66,"title":"Afbeelding 66","filename":"Nieuw project (67).jpg","src":"images/Nieuw project (67).jpg","fixedCode":null},{"id":67,"title":"Afbeelding 67","filename":"Nieuw project (68).jpg","src":"images/Nieuw project (68).jpg","fixedCode":null},{"id":68,"title":"Afbeelding 68","filename":"Nieuw project (69).jpg","src":"images/Nieuw project (69).jpg","fixedCode":null},{"id":69,"title":"Afbeelding 69","filename":"Nieuw project (7).jpg","src":"images/Nieuw project (7).jpg","fixedCode":null},{"id":70,"title":"Afbeelding 70","filename":"Nieuw project (70).jpg","src":"images/Nieuw project (70).jpg","fixedCode":null},{"id":71,"title":"Afbeelding 71","filename":"Nieuw project (71).jpg","src":"images/Nieuw project (71).jpg","fixedCode":null},{"id":72,"title":"Afbeelding 72","filename":"Nieuw project (72).jpg","src":"images/Nieuw project (72).jpg","fixedCode":null},{"id":73,"title":"Afbeelding 73","filename":"Nieuw project (73).jpg","src":"images/Nieuw project (73).jpg","fixedCode":null},{"id":74,"title":"Afbeelding 74","filename":"Nieuw project (74).jpg","src":"images/Nieuw project (74).jpg","fixedCode":null},{"id":75,"title":"Afbeelding 75","filename":"Nieuw project (75).jpg","src":"images/Nieuw project (75).jpg","fixedCode":null},{"id":76,"title":"Afbeelding 76","filename":"Nieuw project (76).jpg","src":"images/Nieuw project (76).jpg","fixedCode":null},{"id":77,"title":"Afbeelding 77","filename":"Nieuw project (77).jpg","src":"images/Nieuw project (77).jpg","fixedCode":null},{"id":78,"title":"Afbeelding 78","filename":"Nieuw project (78).jpg","src":"images/Nieuw project (78).jpg","fixedCode":null},{"id":79,"title":"Afbeelding 79","filename":"Nieuw project (79).jpg","src":"images/Nieuw project (79).jpg","fixedCode":null},{"id":80,"title":"Afbeelding 80","filename":"Nieuw project (8).jpg","src":"images/Nieuw project (8).jpg","fixedCode":null},{"id":81,"title":"Afbeelding 81","filename":"Nieuw project (80).jpg","src":"images/Nieuw project (80).jpg","fixedCode":null},{"id":82,"title":"Afbeelding 82","filename":"Nieuw project (81).jpg","src":"images/Nieuw project (81).jpg","fixedCode":null},{"id":83,"title":"Afbeelding 83","filename":"Nieuw project (82).jpg","src":"images/Nieuw project (82).jpg","fixedCode":null},{"id":84,"title":"Afbeelding 84","filename":"Nieuw project (83).jpg","src":"images/Nieuw project (83).jpg","fixedCode":null},{"id":85,"title":"Afbeelding 85","filename":"Nieuw project (84).jpg","src":"images/Nieuw project (84).jpg","fixedCode":null},{"id":86,"title":"Afbeelding 86","filename":"Nieuw project (85).jpg","src":"images/Nieuw project (85).jpg","fixedCode":null},{"id":87,"title":"Afbeelding 87","filename":"Nieuw project (86).jpg","src":"images/Nieuw project (86).jpg","fixedCode":null},{"id":88,"title":"Afbeelding 88","filename":"Nieuw project (87).jpg","src":"images/Nieuw project (87).jpg","fixedCode":null},{"id":89,"title":"Afbeelding 89","filename":"Nieuw project (88).jpg","src":"images/Nieuw project (88).jpg","fixedCode":null},{"id":90,"title":"Afbeelding 90","filename":"Nieuw project (89).jpg","src":"images/Nieuw project (89).jpg","fixedCode":null},{"id":91,"title":"Afbeelding 91","filename":"Nieuw project (9).jpg","src":"images/Nieuw project (9).jpg","fixedCode":null},{"id":92,"title":"Afbeelding 92","filename":"Nieuw project (90).jpg","src":"images/Nieuw project (90).jpg","fixedCode":null},{"id":93,"title":"Afbeelding 93","filename":"Nieuw project (91).jpg","src":"images/Nieuw project (91).jpg","fixedCode":null},{"id":94,"title":"Afbeelding 94","filename":"Nieuw project (92).jpg","src":"images/Nieuw project (92).jpg","fixedCode":null},{"id":95,"title":"Afbeelding 95","filename":"Nieuw project (93).jpg","src":"images/Nieuw project (93).jpg","fixedCode":null},{"id":96,"title":"Afbeelding 96","filename":"Nieuw project (94).jpg","src":"images/Nieuw project (94).jpg","fixedCode":null},{"id":97,"title":"Afbeelding 97","filename":"Nieuw project (95).jpg","src":"images/Nieuw project (95).jpg","fixedCode":null},{"id":98,"title":"Afbeelding 98","filename":"Nieuw project (96).jpg","src":"images/Nieuw project (96).jpg","fixedCode":null},{"id":99,"title":"Afbeelding 99","filename":"Nieuw project (97).jpg","src":"images/Nieuw project (97).jpg","fixedCode":null},{"id":100,"title":"Afbeelding 100","filename":"Nieuw project (98).jpg","src":"images/Nieuw project (98).jpg","fixedCode":null},{"id":101,"title":"Afbeelding 101","filename":"Nieuw project (99).jpg","src":"images/Nieuw project (99).jpg","fixedCode":null},{"id":102,"title":"Afbeelding 102","filename":"Nieuw project - 2026-09-24T114508.077.jpg","src":"images/Nieuw project - 2026-09-24T114508.077.jpg","fixedCode":null},{"id":103,"title":"Afbeelding 103","filename":"Nieuw project - 2026-09-24T114524.695.jpg","src":"images/Nieuw project - 2026-09-24T114524.695.jpg","fixedCode":null},{"id":104,"title":"Afbeelding 104","filename":"Nieuw project - 2026-09-24T114532.581.jpg","src":"images/Nieuw project - 2026-09-24T114532.581.jpg","fixedCode":null},{"id":105,"title":"Afbeelding 105","filename":"Nieuw project - 2026-09-24T114537.965.jpg","src":"images/Nieuw project - 2026-09-24T114537.965.jpg","fixedCode":null},{"id":106,"title":"Afbeelding 106","filename":"Nieuw project - 2026-09-24T114543.485.jpg","src":"images/Nieuw project - 2026-09-24T114543.485.jpg","fixedCode":null},{"id":107,"title":"Afbeelding 107","filename":"Nieuw project - 2026-09-24T114549.013.jpg","src":"images/Nieuw project - 2026-09-24T114549.013.jpg","fixedCode":null},{"id":108,"title":"Afbeelding 108","filename":"Nieuw project - 2026-09-24T114617.341.jpg","src":"images/Nieuw project - 2026-09-24T114617.341.jpg","fixedCode":null},{"id":109,"title":"Afbeelding 109","filename":"Nieuw project - 2026-09-24T114622.644.jpg","src":"images/Nieuw project - 2026-09-24T114622.644.jpg","fixedCode":null},{"id":110,"title":"Afbeelding 110","filename":"Nieuw project - 2026-09-24T114629.436.jpg","src":"images/Nieuw project - 2026-09-24T114629.436.jpg","fixedCode":null},{"id":111,"title":"Afbeelding 111","filename":"Nieuw project - 2026-09-24T114634.413.jpg","src":"images/Nieuw project - 2026-09-24T114634.413.jpg","fixedCode":null},{"id":112,"title":"Afbeelding 112","filename":"Nieuw project - 2026-09-24T114639.807.jpg","src":"images/Nieuw project - 2026-09-24T114639.807.jpg","fixedCode":null},{"id":113,"title":"Afbeelding 113","filename":"Nieuw project - 2026-09-24T114645.389.jpg","src":"images/Nieuw project - 2026-09-24T114645.389.jpg","fixedCode":null},{"id":114,"title":"Afbeelding 114","filename":"Nieuw project - 2026-09-24T114849.102.jpg","src":"images/Nieuw project - 2026-09-24T114849.102.jpg","fixedCode":null},{"id":115,"title":"Afbeelding 115","filename":"Nieuw project - 2026-09-24T114854.319.jpg","src":"images/Nieuw project - 2026-09-24T114854.319.jpg","fixedCode":null},{"id":116,"title":"Afbeelding 116","filename":"Nieuw project - 2026-09-24T114859.759.jpg","src":"images/Nieuw project - 2026-09-24T114859.759.jpg","fixedCode":null},{"id":117,"title":"Afbeelding 117","filename":"Nieuw project - 2026-09-24T114905.149.jpg","src":"images/Nieuw project - 2026-09-24T114905.149.jpg","fixedCode":null},{"id":118,"title":"Afbeelding 118","filename":"Nieuw project - 2026-09-24T114912.126.jpg","src":"images/Nieuw project - 2026-09-24T114912.126.jpg","fixedCode":null},{"id":119,"title":"Afbeelding 119","filename":"Nieuw project - 2026-09-24T114916.436.jpg","src":"images/Nieuw project - 2026-09-24T114916.436.jpg","fixedCode":null},{"id":120,"title":"Afbeelding 120","filename":"Nieuw project - 2026-09-24T114922.205.jpg","src":"images/Nieuw project - 2026-09-24T114922.205.jpg","fixedCode":null},{"id":121,"title":"Afbeelding 121","filename":"Nieuw project - 2026-09-24T114928.431.jpg","src":"images/Nieuw project - 2026-09-24T114928.431.jpg","fixedCode":null},{"id":122,"title":"Afbeelding 122","filename":"Nieuw project - 2026-09-24T114933.541.jpg","src":"images/Nieuw project - 2026-09-24T114933.541.jpg","fixedCode":null},{"id":123,"title":"Afbeelding 123","filename":"Nieuw project - 2026-09-24T114938.518.jpg","src":"images/Nieuw project - 2026-09-24T114938.518.jpg","fixedCode":null},{"id":124,"title":"Afbeelding 124","filename":"Nieuw project - 2026-09-24T114943.542.jpg","src":"images/Nieuw project - 2026-09-24T114943.542.jpg","fixedCode":null},{"id":125,"title":"Afbeelding 125","filename":"Nieuw project - 2026-09-24T114948.679.jpg","src":"images/Nieuw project - 2026-09-24T114948.679.jpg","fixedCode":null},{"id":126,"title":"Afbeelding 126","filename":"Nieuw project.jpg","src":"images/Nieuw project.jpg","fixedCode":null}];
+const KEY = "wie-ben-ik-afgestreept-v1";
+const CODEKEY = "wie-ben-ik-codes-v1";
+
+let checked = new Set(JSON.parse(localStorage.getItem(KEY) || "[]"));
+let codes = JSON.parse(localStorage.getItem(CODEKEY) || "{}");
+let history = [];
+
+function save(){
+  localStorage.setItem(KEY, JSON.stringify([...checked]));
+  localStorage.setItem(CODEKEY, JSON.stringify(codes));
+}
+
+function randomCode(){
+  return String(Math.floor(100 + Math.random()*900));
+}
+
+function getCode(item){
+  if(item.fixedCode) return item.fixedCode;
+  if(!codes[item.id]){
+    codes[item.id] = randomCode();
+    save();
+  }
+  return codes[item.id];
+}
+
+function render(){
+  const grid=document.getElementById("grid");
+  grid.innerHTML="";
+  ITEMS.forEach(item=>{
+    const card=document.createElement("article");
+    card.className="card"+(checked.has(item.id)?" checked":"");
+    card.dataset.id=item.id;
+    card.innerHTML=`
+      <div class="imgwrap">
+        <img src="${item.src}" alt="${escapeHtml(item.title)}" loading="lazy">
+        <div class="cross">✕</div>
+      </div>
+      <div class="caption" title="${escapeHtml(item.filename)}">${escapeHtml(item.title)}</div>
+      <div class="actions">
+        <button class="toggle">${checked.has(item.id)?"☑️ Afgevinkt":"☐ Afstrepen"}</button>
+        <button class="zoom">🔍 Groot</button>
+      </div>`;
+    card.querySelector(".toggle").addEventListener("click",e=>{
+      e.stopPropagation();
+      toggle(item.id);
+    });
+    card.querySelector(".zoom").addEventListener("click",e=>{
+      e.stopPropagation();
+      openImage(item);
+    });
+    card.addEventListener("dblclick",()=>openCode(item));
+    grid.appendChild(card);
+  });
+  updateStats();
+}
+
+function toggle(id){
+  history.push(new Set(checked));
+  if(checked.has(id)) checked.delete(id); else checked.add(id);
+  save(); render();
+}
+
+function updateStats(){
+  const n=checked.size, total=ITEMS.length;
+  document.getElementById("stats").textContent=`${n} / ${total} afgestreept`;
+  document.getElementById("bar").style.width=(n/total*100)+"%";
+}
+
+function undo(){
+  if(!history.length) return;
+  checked=history.pop();
+  save(); render();
+}
+
+function openImage(item){
+  document.getElementById("largeImage").src=item.src;
+  document.getElementById("largeImage").alt=item.title;
+  document.getElementById("largeTitle").textContent=item.title;
+  document.getElementById("imageModal").classList.add("open");
+}
+function openCode(item){
+  document.getElementById("codeTitle").textContent=item.title;
+  document.getElementById("codeValue").textContent=getCode(item);
+  document.getElementById("codeModal").classList.add("open");
+}
+function closeModal(id){document.getElementById(id).classList.remove("open")}
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+document.getElementById("undoBtn").onclick=undo;
+document.getElementById("showAllBtn").onclick=()=>{
+  history.push(new Set(checked)); checked.clear(); save(); render();
+};
+document.getElementById("resetBtn").onclick=()=>{
+  if(confirm("Alle afgestreepte afbeeldingen herstellen?")){
+    history.push(new Set(checked)); checked.clear(); save(); render();
+  }
+};
+document.getElementById("closeImage").onclick=()=>closeModal("imageModal");
+document.getElementById("closeCode").onclick=()=>closeModal("codeModal");
+document.getElementById("imageModal").addEventListener("click",e=>{if(e.target.id==="imageModal") closeModal("imageModal")});
+document.getElementById("codeModal").addEventListener("click",e=>{if(e.target.id==="codeModal") closeModal("codeModal")});
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"){closeModal("imageModal");closeModal("codeModal")}
+});
+
+render();
+</script>
+</body>
+</html>
